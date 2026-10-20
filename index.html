@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Fitness Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #6b7280; --line: #e5e7eb;
+    --accent: #2563eb; --accent2: #db2777; --good: #059669; --warn: #d97706; --bad: #dc2626;
+    --deep: #1e3a8a; --core: #3b82f6; --rem: #a78bfa; --awake: #f59e0b; --grey: #9ca3af;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --card: #171a21; --text: #e6e8eb; --muted: #9aa3af; --line: #2a2f3a;
+      --accent: #60a5fa; --accent2: #f472b6; --good: #34d399; --warn: #fbbf24; --bad: #f87171;
+      --deep: #3b5bdb; --core: #60a5fa; --rem: #c4b5fd; --awake: #fbbf24; --grey: #6b7280;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .ranges { display: flex; gap: 6px; flex-wrap: wrap; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+           padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .value { font-size: 26px; font-weight: 650; margin: 4px 0 2px; }
+  .kpi .value small { font-size: 14px; font-weight: 500; color: var(--muted); }
+  .kpi .note { color: var(--muted); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 2px; }
+  .card .why { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+  .chart { position: relative; height: 240px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; }
+  .tablewrap { overflow-x: auto; }
+  .low { color: var(--muted); }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; border: 1px solid var(--line); }
+  .tag.bjj { border-color: var(--accent2); color: var(--accent2); }
+  .tag.str { border-color: var(--accent); color: var(--accent); }
+  .tag.warn { border-color: var(--warn); color: var(--warn); }
+  #login { max-width: 380px; margin: 60px auto; }
+  #login input { width: 100%; font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+                 background: var(--bg); color: var(--text); margin: 10px 0; }
+  #login .err { color: var(--bad); font-size: 13px; min-height: 18px; }
+  .banner { background: var(--card); border: 1px dashed var(--warn); color: var(--warn); border-radius: 10px;
+            padding: 8px 12px; font-size: 13px; margin-bottom: 16px; }
+  footer { color: var(--muted); font-size: 12px; margin: 24px 0 8px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- LOGIN: shown when there's no key, or the key was wrong (401) -->
+  <div id="login" class="card hidden">
+    <h1>Fitness Tracker</h1>
+    <p class="sub">Enter your dashboard key. It's saved in this browser only.</p>
+    <input id="keyInput" type="password" placeholder="Dashboard key" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <button class="on" id="loginBtn">Open dashboard</button>
+    <p class="sub" style="margin-top:14px">Just looking? <a href="?demo">View the demo with synthetic data</a>.</p>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="app" class="hidden">
+    <header>
+      <div>
+        <h1>Fitness Tracker</h1>
+        <div class="sub" id="updated"></div>
+      </div>
+      <div class="ranges" id="ranges">
+        <button data-days="7">7d</button>
+        <button data-days="14">14d</button>
+        <button data-days="30">30d</button>
+        <button data-days="90">90d</button>
+        <button id="lockBtn" title="Forget the key on this browser">Lock</button>
+      </div>
+    </header>
+
+    <div id="demoBanner" class="banner hidden">Demo mode: synthetic data, not a real person's health data.</div>
+
+    <section class="kpis" id="kpis"></section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Recovery</h2>
+        <p class="why">HRV (Ultrahuman, overnight) vs resting HR (Watch). HRV down + resting HR up = under-recovered.</p>
+        <div class="chart"><canvas id="cRecovery"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Sleep</h2>
+        <p class="why">Hours per night by stage (Ultrahuman). Dated by the morning you woke up.</p>
+        <div class="chart"><canvas id="cSleep"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Energy balance</h2>
+        <p class="why">Intake (MyFitnessPal) vs total burn (basal + active). Grey = possibly incomplete log. No bar = not logged, never 0.</p>
+        <div class="chart"><canvas id="cEnergy"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Macros</h2>
+        <p class="why">Grams per day on fully logged days only.</p>
+        <div class="chart"><canvas id="cMacros"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Activity</h2>
+        <p class="why">Steps and exercise minutes (Watch).</p>
+        <div class="chart"><canvas id="cActivity"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Training load</h2>
+        <p class="why">Minutes per day by type. Cool-downs are merged into the session before them.</p>
+        <div class="chart"><canvas id="cTraining"></canvas></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Training log</h2>
+      <p class="why">Greyed rows: Polar strap lost contact for most of the session, so HR is less reliable.</p>
+      <div class="tablewrap"><table id="log"></table></div>
+    </section>
+
+    <footer id="rules"></footer>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// 1. SETTINGS AND STATE
+// ---------------------------------------------------------------------------
+const API = "/api/data";
+const DEMO = new URLSearchParams(location.search).has("demo");
+let rangeDays = 30;
+let charts = [];
+
+function getKey()   { try { return localStorage.getItem("ft_key"); } catch (e) { return null; } }
+function setKey(k)  { try { localStorage.setItem("ft_key", k); } catch (e) {} }
+function clearKey() { try { localStorage.removeItem("ft_key"); } catch (e) {} }
+try { rangeDays = Number(localStorage.getItem("ft_range")) || 30; } catch (e) {}
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = id => document.getElementById(id);
+
+// ---------------------------------------------------------------------------
+// 2. LOAD DATA (real API, or synthetic demo data)
+// ---------------------------------------------------------------------------
+async function load() {
+  if (DEMO) { show("app"); $("demoBanner").classList.remove("hidden"); render(demoData(rangeDays)); return; }
+  const key = getKey();
+  if (!key) { show("login"); return; }
+  try {
+    const res = await fetch(`${API}?days=${rangeDays}`, { headers: { Authorization: `Bearer ${key}` } });
+    if (res.status === 401) { clearKey(); show("login"); $("loginErr").textContent = "That key didn't work."; return; }
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(`${res.status} ${e.error || ""} ${e.detail || ""}`); }
+    show("app");
+    render(await res.json());
+  } catch (err) {
+    show("app");
+    $("kpis").innerHTML = `<div class="card">Couldn't load data: ${err.message}</div>`;
+  }
+}
+
+function show(which) {
+  $("login").classList.toggle("hidden", which !== "login");
+  $("app").classList.toggle("hidden", which !== "app");
+}
+
+// ---------------------------------------------------------------------------
+// 3. DRAW
+// ---------------------------------------------------------------------------
+function render(data) {
+  charts.forEach(c => c.destroy()); charts = [];
+  Chart.defaults.color = css("--muted");
+  Chart.defaults.borderColor = css("--line");
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+  document.querySelectorAll("#ranges [data-days]").forEach(b =>
+    b.classList.toggle("on", Number(b.dataset.days) === rangeDays));
+  $("updated").textContent = `${data.range.start} → ${data.range.end} · updated ${data.generated_at.slice(11, 16)}`;
+
+  const days = data.days, s = data.summary;
+  const labels = days.map(d => d.day.slice(5));          // "10-15"
+  const col = k => days.map(d => d[k]);
+
+  drawKpis(data);
+
+  // Recovery
+  charts.push(new Chart($("cRecovery"), {
+    type: "line",
+    data: { labels, datasets: [
+      { label: "HRV (ms)", data: col("hrv"), borderColor: css("--accent"), backgroundColor: css("--accent"),
+        yAxisID: "y", tension: .3, pointRadius: days.map(d => d.training.includes("BJJ") ? 5 : 3),
+        pointStyle: days.map(d => d.training.includes("BJJ") ? "triangle" : "circle") },
+      { label: "Resting HR (bpm)", data: col("rhr"), borderColor: css("--accent2"), backgroundColor: css("--accent2"),
+        yAxisID: "y1", tension: .3, pointRadius: 3 },
+    ]},
+    options: base({
+      y:  { position: "left",  title: { display: true, text: "HRV ms" } },
+      y1: { position: "right", title: { display: true, text: "RHR bpm" }, grid: { drawOnChartArea: false } },
+    }, (i) => days[i].training.length ? "Trained: " + days[i].training.join(", ") : "Rest day"),
+  }));
+
+  // Sleep
+  charts.push(new Chart($("cSleep"), {
+    type: "bar",
+    data: { labels, datasets: [
+      { label: "Deep", data: col("sleep_deep"), backgroundColor: css("--deep") },
+      { label: "Core", data: col("sleep_core"), backgroundColor: css("--core") },
+      { label: "REM",  data: col("sleep_rem"),  backgroundColor: css("--rem") },
+    ]},
+    options: base({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: "hours" } } },
+      (i) => days[i].sleep_total != null ? `Total ${days[i].sleep_total.toFixed(1)} h` : "No sleep data"),
+  }));
+
+  // Energy
+  const barColour = days.map(d => d.intake_status === "complete" ? css("--accent")
+                               : d.intake_status === "today" ? css("--line") : css("--grey"));
+  charts.push(new Chart($("cEnergy"), {
+    data: { labels, datasets: [
+      { type: "bar", label: "Intake kcal", data: col("intake"), backgroundColor: barColour, order: 2 },
+      { type: "line", label: "Total burn kcal", data: col("total_burn"), borderColor: css("--accent2"),
+        backgroundColor: css("--accent2"), tension: .3, pointRadius: 3, order: 1 },
+    ]},
+    options: base({ y: { title: { display: true, text: "kcal" } } }, (i) => {
+      const d = days[i];
+      if (d.intake_status === "not_logged") return "Not logged";
+      if (d.intake_status === "partial") return "Possibly incomplete log: excluded from averages";
+      if (d.intake_status === "today") return "Today so far";
+      return d.net_energy != null ? `Net ${d.net_energy > 0 ? "+" : ""}${d.net_energy} kcal` : "";
+    }),
+  }));
+
+  // Macros (complete days only)
+  const onlyComplete = k => days.map(d => d.intake_status === "complete" ? d[k] : null);
+  charts.push(new Chart($("cMacros"), {
+    data: { labels, datasets: [
+      { type: "bar", label: "Protein g", data: onlyComplete("protein"), backgroundColor: css("--accent") },
+      { type: "bar", label: "Carbs g",   data: onlyComplete("carbs"),   backgroundColor: css("--rem") },
+      { type: "bar", label: "Fat g",     data: onlyComplete("fat"),     backgroundColor: css("--awake") },
+      { type: "line", label: "Fibre g",  data: onlyComplete("fibre"),   borderColor: css("--good"),
+        backgroundColor: css("--good"), yAxisID: "y1", tension: .3, pointRadius: 3 },
+    ]},
+    options: base({ y: { title: { display: true, text: "g" } },
+                    y1: { position: "right", title: { display: true, text: "fibre g" }, grid: { drawOnChartArea: false } } }),
+  }));
+
+  // Activity
+  charts.push(new Chart($("cActivity"), {
+    data: { labels, datasets: [
+      { type: "bar", label: "Steps", data: col("steps"), backgroundColor: css("--core") },
+      { type: "line", label: "Exercise min", data: col("exercise_min"), borderColor: css("--good"),
+        backgroundColor: css("--good"), yAxisID: "y1", tension: .3, pointRadius: 3 },
+    ]},
+    options: base({ y: { title: { display: true, text: "steps" } },
+                    y1: { position: "right", title: { display: true, text: "min" }, grid: { drawOnChartArea: false } } }),
+  }));
+
+  // Training load (minutes per category per day)
+  const cats = [...new Set(data.sessions.map(x => x.category))];
+  const palette = { BJJ: css("--accent2"), Strength: css("--accent"), Run: css("--good") };
+  charts.push(new Chart($("cTraining"), {
+    type: "bar",
+    data: { labels, datasets: cats.map(c => ({
+      label: c, backgroundColor: palette[c] || css("--grey"),
+      data: days.map(d => {
+        const m = data.sessions.filter(x => x.day === d.day && x.category === c).reduce((a, x) => a + x.duration_min, 0);
+        return m || null;
+      }),
+    }))},
+    options: base({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: "minutes" } } }),
+  }));
+
+  drawLog(data.sessions);
+  const r = data.rules;
+  $("rules").textContent = `Rules: intake below ${Math.round(r.partial_intake_ratio * 100)}% of your typical day is flagged as possibly incomplete; ` +
+    `Polar sessions under ${r.low_hr_coverage}% HR coverage are greyed; cool-downs within ${r.cooldown_merge_min} min are merged into the previous session; ` +
+    `today is left out of averages for metrics that build up during the day.`;
+}
+
+function base(scales, footer) {
+  return {
+    responsive: true, maintainAspectRatio: false, spanGaps: false,     // gaps stay gaps: missing is not zero
+    interaction: { mode: "index", intersect: false },
+    plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } },
+               tooltip: footer ? { callbacks: { footer: items => footer(items[0].dataIndex) } } : {} },
+    scales: { x: { grid: { display: false }, ...(scales.x || {}) }, ...scales },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 4. KPI CARDS AND TRAINING TABLE
+// ---------------------------------------------------------------------------
+function drawKpis(data) {
+  const s = data.summary, days = data.days, sessions = data.sessions;
+  const last = k => { for (let i = days.length - 1; i >= 0; i--) if (days[i][k] != null) return days[i][k]; return null; };
+  const fmt = (v, dp = 0) => v == null ? "–" : Number(v).toLocaleString(undefined, { maximumFractionDigits: dp });
+  const bjj = sessions.filter(x => x.category === "BJJ").length;
+  const hours = sessions.reduce((a, x) => a + x.duration_min, 0) / 60;
+  const net = s.net_energy.avg;
+
+  const cards = [
+    ["HRV", `${fmt(s.hrv.avg)} <small>ms avg</small>`, `Latest ${fmt(last("hrv"))} ms · ${s.hrv.days}/${s.hrv.of} nights`],
+    ["Resting HR", `${fmt(s.rhr.avg)} <small>bpm avg</small>`, `Latest ${fmt(last("rhr"))} bpm`],
+    ["Sleep", `${fmt(s.sleep_total.avg, 1)} <small>h avg</small>`, `Deep ${fmt(s.sleep_deep.avg, 1)} h · REM ${fmt(s.sleep_rem.avg, 1)} h`],
+    ["Protein", `${fmt(s.protein.avg)} <small>g avg</small>`, `${s.protein.days} of ${s.protein.of} days fully logged`],
+    ["Net energy", `${net == null ? "–" : (net > 0 ? "+" : "") + fmt(net)} <small>kcal/day</small>`, `Over ${s.net_energy.days} complete days`],
+    ["Training", `${sessions.length} <small>sessions</small>`, `${fmt(hours, 1)} h total · ${bjj} BJJ`],
+  ];
+  $("kpis").innerHTML = cards.map(([l, v, n]) =>
+    `<div class="card kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="note">${n}</div></div>`).join("");
+}
+
+function drawLog(sessions) {
+  const rows = [...sessions].reverse().map(x => {
+    const tag = x.category === "BJJ" ? "bjj" : x.category === "Strength" ? "str" : "";
+    const cd = x.cooldown_min ? ` <span class="sub">(incl. ${Math.round(x.cooldown_min)} cool-down)</span>` : "";
+    const cov = x.hr_coverage_pct == null ? "" : x.low_signal
+      ? `<span class="tag warn">${Math.round(x.hr_coverage_pct)}% signal</span>` : `${Math.round(x.hr_coverage_pct)}%`;
+    return `<tr class="${x.low_signal ? "low" : ""}">
+      <td>${x.day.slice(5)} ${x.time}</td><td><span class="tag ${tag}">${x.category}</span></td>
+      <td>${Math.round(x.duration_min)} min${cd}</td><td>${x.active_kcal ?? "–"} kcal</td>
+      <td>${x.avg_hr ?? "–"} / ${x.max_hr ?? "–"}</td><td>${cov}</td><td class="sub">${x.source ?? ""}</td></tr>`;
+  }).join("");
+  $("log").innerHTML = `<tr><th>When</th><th>Type</th><th>Duration</th><th>Active</th><th>Avg / max HR</th><th>HR signal</th><th>Source</th></tr>${rows}`;
+}
+
+// ---------------------------------------------------------------------------
+// 5. DEMO DATA (synthetic, same shape as /api/data) - safe to show anyone
+// ---------------------------------------------------------------------------
+function demoData(n) {
+  let seed = 42; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const between = (a, b) => Math.round((a + rnd() * (b - a)) * 10) / 10;
+  const today = new Date(); const days = [], sessions = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const day = d.toISOString().slice(0, 10), dow = d.getDay(), isToday = i === 0;
+    const bjj = [1, 3, 6].includes(dow), str = [0, 2, 4, 5].includes(dow);
+    const basal = between(1950, 2050), active = between(500, 900) + (bjj ? 700 : 0);
+    const r = rnd(), status = isToday ? "today" : r < .1 ? "not_logged" : r < .18 ? "partial" : "complete";
+    const intake = status === "not_logged" ? null : status === "partial" ? between(900, 1400) : between(2300, 2900);
+    const deep = between(1, 1.7), core = between(3.5, 4.8), rem = between(1, 2);
+    const row = { day, is_today: isToday, hrv: between(68, 92) - (bjj ? 6 : 0), rhr: between(55, 62),
+      steps: Math.round(between(6000, 12000)), exercise_min: Math.round(between(30, 120)), basal, active,
+      total_burn: Math.round(basal + active), intake, intake_status: status,
+      protein: status === "complete" ? between(170, 215) : null, carbs: status === "complete" ? between(220, 320) : null,
+      fat: status === "complete" ? between(60, 95) : null, fibre: status === "complete" ? between(20, 38) : null,
+      sleep_deep: deep, sleep_core: core, sleep_rem: rem, sleep_total: Math.round((deep + core + rem) * 10) / 10,
+      training: [], training_min: 0 };
+    row.net_energy = status === "complete" ? Math.round(intake - row.total_burn) : null;
+    if (str) { const m = between(50, 80); sessions.push({ day, time: "09:30", category: "Strength", name: "Functional Strength Training",
+      source: "Apple Watch", duration_min: m, cooldown_min: 12, active_kcal: Math.round(m * 6.5), avg_hr: between(118, 132),
+      max_hr: Math.round(between(150, 165)), hr_coverage_pct: 100, low_signal: false }); row.training.push("Strength"); }
+    if (bjj) { const cov = Math.round(between(30, 95)); const m = between(70, 125); sessions.push({ day, time: "19:30", category: "BJJ",
+      name: "Martial Arts", source: "Polar Beat", duration_min: m, cooldown_min: 0, active_kcal: Math.round(m * 9.4),
+      avg_hr: between(108, 128), max_hr: Math.round(between(172, 186)), hr_coverage_pct: cov, low_signal: cov < 50 }); row.training.push("BJJ"); }
+    days.push(row);
+  }
+  const summary = {}, cum = ["steps", "exercise_min", "intake", "protein", "carbs", "fat", "fibre", "total_burn", "net_energy"];
+  ["hrv", "rhr", "steps", "exercise_min", "intake", "protein", "carbs", "fat", "fibre", "total_burn", "net_energy",
+   "sleep_total", "sleep_deep", "sleep_rem"].forEach(k => {
+    const usable = days.filter(d => !(cum.includes(k) && d.is_today))
+      .map(d => (["intake", "protein", "carbs", "fat", "fibre"].includes(k) && d.intake_status !== "complete") ? null : d[k]);
+    const known = usable.filter(v => v != null);
+    summary[k] = { avg: known.length ? known.reduce((a, b) => a + b, 0) / known.length : null, days: known.length, of: usable.length };
+  });
+  return { generated_at: new Date().toISOString(), range: { start: days[0].day, end: days[days.length - 1].day, days: n },
+           days, sessions, summary, rules: { partial_intake_ratio: .6, low_hr_coverage: 50, cooldown_merge_min: 60 } };
+}
+
+// ---------------------------------------------------------------------------
+// 6. WIRING
+// ---------------------------------------------------------------------------
+document.querySelectorAll("#ranges [data-days]").forEach(b => b.onclick = () => {
+  rangeDays = Number(b.dataset.days);
+  try { localStorage.setItem("ft_range", rangeDays); } catch (e) {}
+  load();
+});
+$("lockBtn").onclick = () => { clearKey(); location.href = location.pathname; };
+$("loginBtn").onclick = () => { const k = $("keyInput").value.trim(); if (k) { setKey(k); $("loginErr").textContent = ""; load(); } };
+$("keyInput").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
+load();
+</script>
+</body>
+</html>
