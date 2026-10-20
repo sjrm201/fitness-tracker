@@ -15,18 +15,19 @@ create table daily_metrics (
 -- 2. WORKOUTS: one row per workout session
 -- ============================================================
 create table workouts (
-  id             text        primary key,        -- Apple Health's unique workout ID
-  start_at       timestamptz not null,
-  end_at         timestamptz not null,
-  activity_type  text        not null,           -- 'functional_strength_training', 'martial_arts', 'cool_down', ...
-  name           text,                           -- 'Functional Strength Training'
-  duration_min   numeric,
-  active_kcal    numeric,
-  avg_hr         numeric,                        -- NULL for Polar BJJ (not measured)
-  max_hr         numeric,
-  distance_km    numeric,                        -- NULL for non-distance workouts
-  source         text,                           -- 'Apple Watch', 'Polar Beat'
-  updated_at     timestamptz not null default now()
+  id               text        primary key,      -- Apple Health's unique workout ID
+  start_at         timestamptz not null,
+  end_at           timestamptz not null,
+  activity_type    text        not null,         -- 'functional_strength_training', 'martial_arts', 'cool_down', ...
+  name             text,                         -- 'Functional Strength Training'
+  duration_min     numeric,
+  active_kcal      numeric,
+  avg_hr           numeric,                      -- Polar: recalculated without strap dropouts
+  max_hr           numeric,
+  hr_coverage_pct  numeric,                      -- % of minutes with a real HR signal (NULL = no HR data)
+  distance_km      numeric,                      -- NULL for non-distance workouts
+  source           text,                         -- 'Apple Watch', 'Polar Beat'
+  updated_at       timestamptz not null default now()
 );
 
 -- ============================================================
@@ -45,3 +46,8 @@ create table raw_payloads (
 alter table daily_metrics enable row level security;
 alter table workouts      enable row level security;
 alter table raw_payloads  enable row level security;
+
+-- ============================================================
+-- CHANGE LOG (migrations already applied to the live database)
+-- ============================================================
+-- 2026-10-20: alter table workouts add column hr_coverage_pct numeric;

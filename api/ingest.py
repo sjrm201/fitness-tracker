@@ -31,6 +31,12 @@ WISHLIST = {
     "sleep_analysis",
 }
 
+# Polar strap dropouts: when the strap loses skin contact it records 0 bpm
+# (or very low values). During training your HR is never below this, so any
+# minute under it is "no signal", not effort. Your resting HR is ~58.
+# Tune this if needed.
+HR_DROPOUT_FLOOR = 70
+
 # Sleep arrives as one bundle; we flatten it into separate metrics.
 SLEEP_PARTS = {
     "totalSleep": "sleep_total",
@@ -128,17 +134,44 @@ def metric_rows(metrics):
     return list(rows.values()), sorted(i for i in ignored if i)
 
 
+def workout_hr(w):
+    """Return (avg_hr, max_hr, coverage_pct) for one workout.
+
+    Polar sessions: recalculate from the minute-by-minute data, skipping
+    dropout minutes (below HR_DROPOUT_FLOOR). Coverage = % of minutes with a
+    real signal, so the dashboard can grey out sessions it shouldn't trust.
+    Everything else: use Auto Export's own summary, unchanged.
+    """
+    source = (source_name(w.get("source")) or "").lower()
+    minutes = [p for p in (w.get("heartRateData") or []) if p.get("Avg") is not None]
+
+    if "polar" in source and minutes:
+        good = [p for p in minutes if p["Avg"] >= HR_DROPOUT_FLOOR]
+        if not good:
+            return None, None, 0                     # no usable signal at all
+        avg_hr = round(sum(p["Avg"] for p in good) / len(good), 1)
+        max_hr = max(first(p.get("Max"), p["Avg"]) for p in good)
+        coverage = round(100 * len(good) / len(minutes))
+        return avg_hr, max_hr, coverage
+
+    hr = w.get("heartRate") or {}
+    avg_hr = first(qty(hr.get("avg")), qty(w.get("avgHeartRate")))
+    max_hr = first(qty(hr.get("max")), qty(w.get("maxHeartRate")))
+    return avg_hr, max_hr, (100 if avg_hr is not None else None)
+
+
 def workout_rows(workouts):
     rows = []
     for w in workouts:
         if not w.get("id"):
             continue
         name = w.get("name") or "Unknown"
-        hr = w.get("heartRate") or {}
 
         km = qty(w.get("distance"))
         if km is not None and (w.get("distance") or {}).get("units") == "mi":
             km = km * 1.60934                              # miles -> km
+
+        avg_hr, max_hr, coverage = workout_hr(w)
 
         rows.append({
             "id": w["id"],
@@ -148,8 +181,9 @@ def workout_rows(workouts):
             "name": name,
             "duration_min": round(w["duration"] / 60, 1) if w.get("duration") is not None else None,
             "active_kcal": qty(w.get("activeEnergyBurned")),
-            "avg_hr": first(qty(hr.get("avg")), qty(w.get("avgHeartRate"))),   # stays None for Polar BJJ
-            "max_hr": first(qty(hr.get("max")), qty(w.get("maxHeartRate"))),
+            "avg_hr": avg_hr,
+            "max_hr": max_hr,
+            "hr_coverage_pct": coverage,
             "distance_km": round(km, 2) if km is not None else None,
             "source": source_name(w.get("source")),
             "updated_at": now_iso(),
