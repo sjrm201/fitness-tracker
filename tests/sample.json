@@ -1,0 +1,28 @@
+{
+  "data": {
+    "metrics": [
+      { "name": "protein", "units": "g", "data": [
+          { "date": "2026-01-01 00:00:00 +0400", "qty": 190.5, "source": "MyFitnessPal" },
+          { "date": "2026-01-02 00:00:00 +0400", "qty": 205.0, "source": "MyFitnessPal" } ] },
+      { "name": "step_count", "units": "count", "data": [
+          { "date": "2026-01-01 00:00:00 +0400", "qty": 9365, "source": "Sarthak's Apple Watch" } ] },
+      { "name": "sleep_analysis", "units": "hr", "data": [
+          { "date": "2026-01-02", "totalSleep": 7.3, "deep": 1.6, "rem": 1.5, "core": 4.2,
+            "awake": 1.1, "source": "Ultrahuman" } ] },
+      { "name": "vo2_max", "units": "ml/(kg*min)", "data": [
+          { "date": "2026-01-01 00:00:00 +0400", "qty": 48.2 } ] }
+    ],
+    "workouts": [
+      { "id": "test-bjj-1", "name": "Martial Arts",
+        "start": "2026-01-01 19:30:00 +0400", "end": "2026-01-01 21:00:00 +0400",
+        "duration": 5400, "activeEnergyBurned": { "qty": 900, "units": "kcal" },
+        "source": "Polar Beat" },
+      { "id": "test-gym-1", "name": "Functional Strength Training",
+        "start": "2026-01-02 09:30:00 +0400", "end": "2026-01-02 10:20:00 +0400",
+        "duration": 3000, "activeEnergyBurned": { "qty": 334, "units": "kcal" },
+        "heartRate": { "min": { "qty": 76, "units": "bpm" }, "avg": { "qty": 122.6, "units": "bpm" },
+                       "max": { "qty": 159, "units": "bpm" } },
+        "source": "Sarthak's Apple Watch" }
+    ]
+  }
+}
