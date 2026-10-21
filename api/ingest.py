@@ -33,8 +33,8 @@ WISHLIST = {
 
 # Polar strap dropouts: when the strap loses skin contact it records 0 bpm
 # (or very low values). During training your HR is never below this, so any
-# minute under it is "no signal", not effort. Your resting HR is ~58.
-# Tune this if needed.
+# minute under it is "no signal", not effort. Set it ~10 bpm above your
+# resting heart rate.
 HR_DROPOUT_FLOOR = 70
 
 # Sleep arrives as one bundle; we flatten it into separate metrics.

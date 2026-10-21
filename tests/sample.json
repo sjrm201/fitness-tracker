@@ -24,7 +24,7 @@
           {
             "date": "2026-01-01 00:00:00 +0400",
             "qty": 9365,
-            "source": "Sarthak's Apple Watch"
+            "source": "Apple Watch"
           }
         ]
       },
@@ -215,7 +215,7 @@
             "units": "bpm"
           }
         },
-        "source": "Sarthak's Apple Watch"
+        "source": "Apple Watch"
       }
     ]
   }

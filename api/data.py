@@ -23,7 +23,9 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SECRET_KEY", "")
 DASHBOARD_KEY = os.environ.get("DASHBOARD_KEY", "")
 
-LOCAL_TZ = timezone(timedelta(hours=4))   # Abu Dhabi. Used to put workouts on the right day.
+# Your UTC offset in hours (e.g. 4 for Dubai, 1 for London in summer).
+# Used to put workouts on the right calendar day. Set TZ_OFFSET_HOURS in your env.
+LOCAL_TZ = timezone(timedelta(hours=float(os.environ.get("TZ_OFFSET_HOURS", "0"))))
 
 # Interpretation rules - tune these, they're yours.
 PARTIAL_INTAKE_RATIO = 0.6    # intake below 60% of your typical day = "possibly incomplete"
