@@ -59,6 +59,20 @@ def qty(obj):
     return obj.get("qty") if isinstance(obj, dict) else None
 
 
+def to_kcal(value, unit):
+    """Energy can arrive in kilojoules depending on phone settings. Store kcal, always."""
+    if value is not None and unit and unit.lower() == "kj":
+        return round(value / 4.184, 1), "kcal"
+    return value, unit
+
+
+def energy(obj):
+    """Unwrap a workout energy figure like {"qty": 1470, "units": "kJ"} into kcal."""
+    if not isinstance(obj, dict):
+        return None
+    return to_kcal(obj.get("qty"), obj.get("units"))[0]
+
+
 def first(*values):
     """Return the first value that is not None. (0 counts as a real value.)"""
     for v in values:
@@ -127,9 +141,10 @@ def metric_rows(metrics):
                             "unit": "hr", "source": source, "updated_at": now_iso(),
                         }
             elif point.get("qty") is not None:         # no number -> no row. Never invent a 0.
+                value, unit = to_kcal(point["qty"], m.get("units"))
                 rows[(day, name)] = {
-                    "day": day, "metric": name, "value": point["qty"],
-                    "unit": m.get("units"), "source": source, "updated_at": now_iso(),
+                    "day": day, "metric": name, "value": value,
+                    "unit": unit, "source": source, "updated_at": now_iso(),
                 }
     return list(rows.values()), sorted(i for i in ignored if i)
 
@@ -180,7 +195,7 @@ def workout_rows(workouts):
             "activity_type": name.lower().replace(" ", "_"),   # 'Martial Arts' -> 'martial_arts'
             "name": name,
             "duration_min": round(w["duration"] / 60, 1) if w.get("duration") is not None else None,
-            "active_kcal": qty(w.get("activeEnergyBurned")),
+            "active_kcal": energy(w.get("activeEnergyBurned")),
             "avg_hr": avg_hr,
             "max_hr": max_hr,
             "hr_coverage_pct": coverage,

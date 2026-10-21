@@ -258,6 +258,11 @@ class handler(BaseHTTPRequestHandler):
                 "workouts",
                 f"select=*&start_at=gte.{fetch_from}&order=start_at.asc")
 
+            # Don't count days before your data begins as "missing"
+            if metric_rows:
+                first_day = date.fromisoformat(min(r["day"] for r in metric_rows))
+                start = max(start, first_day)
+
             days = build_days(metric_rows, start, today, today)
             sessions = [s for s in build_sessions(workout_rows) if s["day"] >= start.isoformat()]
             attach_training(days, sessions)
