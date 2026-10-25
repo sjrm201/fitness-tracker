@@ -75,7 +75,8 @@ index.html      the dashboard (and ?demo mode)
 | Secret | Can do | Lives in |
 |---|---|---|
 | `INGEST_SECRET` | **Write** health data | The phone's automation header, Vercel |
-| `DASHBOARD_KEY` | **Read** the dashboard | Your browser(s), Vercel |
+| `DASHBOARD_KEY` | **Read** the dashboard and save notes | Your browser(s), Vercel |
+| `COACH_KEY` *(optional)* | **Read only**, for someone you share with. Revoke by changing it, without affecting your own key | Their browser, Vercel |
 | `SUPABASE_SECRET_KEY` | Everything | Vercel and your local `.env` only. Never in a browser |
 
 - Row Level Security is on for every table, with no policies, so the public Supabase API returns nothing. Only the server (with the secret key) can read or write.

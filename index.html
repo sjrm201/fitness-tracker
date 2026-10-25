@@ -90,7 +90,7 @@
   <!-- DASHBOARD -->
   <div id="app" class="hidden">
     <header>
-      <div><h1>Fitness Tracker</h1><div class="sub" id="updated"></div></div>
+      <div><h1>Fitness Tracker</h1><div class="sub"><span id="updated"></span> <span id="viewerTag" class="partial"></span></div></div>
       <div class="row" id="ranges">
         <button data-days="7">7d</button><button data-days="14">14d</button>
         <button data-days="30">30d</button><button data-days="90">90d</button>
@@ -130,8 +130,8 @@
       <div class="foot" id="weekFoot"></div>
     </section>
 
-    <!-- 4. Daily note -->
-    <section class="card">
+    <!-- 4. Daily note (owner only; hidden for the coach's read-only key) -->
+    <section class="card" id="noteCard">
       <h2>Daily note</h2>
       <p class="why">Context your devices can't capture. Save an empty note to remove it.</p>
       <div class="noteform">
@@ -210,7 +210,14 @@ function show(which) {
 // ---------------------------------------------------------------------------
 const fmt = (v, dp = 0) => v == null ? "–" : Number(v).toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
+function applyViewer(data) {
+  const coach = data.viewer === "coach";
+  $("noteCard").classList.toggle("hidden", coach);
+  $("viewerTag").textContent = coach ? "Coach view · read-only" : "";
+}
+
 function renderRange(data) {
+  applyViewer(data);
   document.querySelectorAll("#ranges [data-days]").forEach(b => b.classList.toggle("on", Number(b.dataset.days) === rangeDays));
   $("updated").textContent = `${niceDay(data.range.start, false)} → ${niceDay(data.range.end, false)} · updated ${data.generated_at.slice(11, 16)}`;
 
@@ -270,6 +277,7 @@ const FOOD = new Set(["intake", "protein", "carbs", "fat"]);
 function esc(t) { return String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 function renderWeek(data) {
+  applyViewer(data);
   const byDay = {}; data.sessions.forEach(x => (byDay[x.day] = byDay[x.day] || []).push(x.category));
   const head = `<tr><th>Day</th>${COLS.map(c => `<th>${c[1]}</th>`).join("")}<th class="txt">Session</th><th>Weight</th><th class="txt">Note</th></tr>`;
 

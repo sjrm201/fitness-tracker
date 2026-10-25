@@ -21,7 +21,8 @@ import urllib.error
 # ---------------------------------------------------------------------------
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SECRET_KEY", "")
-DASHBOARD_KEY = os.environ.get("DASHBOARD_KEY", "")
+DASHBOARD_KEY = os.environ.get("DASHBOARD_KEY", "")   # yours: read + notes
+COACH_KEY = os.environ.get("COACH_KEY", "")           # your coach's: read-only, revocable on its own
 
 # Your UTC offset in hours (e.g. 4 for Dubai, 1 for London in summer).
 # Used to put workouts on the right calendar day. Set TZ_OFFSET_HOURS in your env.
@@ -242,10 +243,18 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(body).encode())
 
+    def viewer(self):
+        """Who is asking: 'owner', 'coach', or None. An unset key never matches (fail closed)."""
+        sent = self.headers.get("Authorization", "").encode()
+        if DASHBOARD_KEY and hmac.compare_digest(sent, f"Bearer {DASHBOARD_KEY}".encode()):
+            return "owner"
+        if COACH_KEY and hmac.compare_digest(sent, f"Bearer {COACH_KEY}".encode()):
+            return "coach"
+        return None
+
     def do_GET(self):
-        sent = self.headers.get("Authorization", "")
-        expected = f"Bearer {DASHBOARD_KEY}"
-        if not DASHBOARD_KEY or not hmac.compare_digest(sent.encode(), expected.encode()):
+        viewer = self.viewer()
+        if viewer is None:
             self.reply(401, {"error": "unauthorized"})
             return
 
@@ -300,6 +309,7 @@ class handler(BaseHTTPRequestHandler):
 
         self.reply(200, {
             "generated_at": datetime.now(LOCAL_TZ).isoformat(timespec="minutes"),
+            "viewer": viewer,
             "range": {"start": start.isoformat(), "end": end.isoformat(), "days": n_days},
             "days": days,
             "sessions": sessions,
