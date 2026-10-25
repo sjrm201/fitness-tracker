@@ -29,6 +29,7 @@ WISHLIST = {
     "apple_exercise_time", "physical_effort",
     "dietary_energy", "protein", "carbohydrates", "total_fat", "fiber",
     "sleep_analysis",
+    "weight_&_body_mass",          # from the Eufy scale via Apple Health
 }
 
 # Polar strap dropouts: when the strap loses skin contact it records 0 bpm
@@ -60,9 +61,12 @@ def qty(obj):
 
 
 def to_kcal(value, unit):
-    """Energy can arrive in kilojoules depending on phone settings. Store kcal, always."""
-    if value is not None and unit and unit.lower() == "kj":
+    """Normalise units whatever the phone's settings: energy -> kcal, weight -> kg."""
+    u = (unit or "").lower()
+    if value is not None and u == "kj":
         return round(value / 4.184, 1), "kcal"
+    if value is not None and u in ("lb", "lbs"):
+        return round(value * 0.453592, 2), "kg"
     return value, unit
 
 

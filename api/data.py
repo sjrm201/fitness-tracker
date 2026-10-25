@@ -53,6 +53,7 @@ FIELDS = {
     "sleep_rem": "sleep_rem",
     "sleep_core": "sleep_core",
     "sleep_awake": "sleep_awake",
+    "weight_&_body_mass": "weight",   # Eufy scale via Apple Health
 }
 
 # Metrics that build up during the day: today's value is incomplete,
@@ -92,7 +93,8 @@ def avg(values):
 # ---------------------------------------------------------------------------
 # 3. DAYS: long rows -> one wide row per day, plus derived numbers
 # ---------------------------------------------------------------------------
-def build_days(metric_rows, start, end, today):
+def build_days(metric_rows, start, end, today, notes=None):
+    notes = notes or {}
     by_day = {}
     for r in metric_rows:
         short = FIELDS.get(r["metric"])
@@ -108,7 +110,7 @@ def build_days(metric_rows, start, end, today):
     while d <= end:
         key = d.isoformat()
         m = by_day.get(key, {})
-        row = {"day": key, "is_today": d == today}
+        row = {"day": key, "is_today": d == today, "note": notes.get(key)}
         row.update({short: m.get(short) for short in FIELDS.values()})
 
         # Total burn = basal + active, only when BOTH are known (never guess one as 0)
@@ -248,25 +250,41 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             params = parse_qs(urlparse(self.path).query)
-            n_days = max(1, min(int(params.get("days", ["30"])[0]), 730))
             today = datetime.now(LOCAL_TZ).date()
-            start = today - timedelta(days=n_days - 1)
+
+            # Two ways to ask: ?days=N (the last N days) or ?start=...&end=... (any window, e.g. a week)
+            if "start" in params:
+                start = date.fromisoformat(params["start"][0])
+                end = min(date.fromisoformat(params.get("end", [today.isoformat()])[0]), today)
+                if end < start or (end - start).days > 400:
+                    self.reply(400, {"error": "start must be before end, at most 400 days apart"})
+                    return
+            else:
+                n_days = max(1, min(int(params.get("days", ["30"])[0]), 730))
+                start, end = today - timedelta(days=n_days - 1), today
+            n_days = (end - start).days + 1
             fetch_from = (start - timedelta(days=1)).isoformat()   # 1-day buffer for timezones
+            fetch_to = (end + timedelta(days=2)).isoformat()
 
             metric_rows = supabase_get(
                 "daily_metrics",
-                f"select=day,metric,value&day=gte.{start.isoformat()}&order=day.asc")
+                f"select=day,metric,value&day=gte.{start.isoformat()}&day=lte.{end.isoformat()}&order=day.asc")
             workout_rows = supabase_get(
                 "workouts",
-                f"select=*&start_at=gte.{fetch_from}&order=start_at.asc")
+                f"select=*&start_at=gte.{fetch_from}&start_at=lt.{fetch_to}&order=start_at.asc")
+            note_rows = supabase_get(
+                "daily_notes",
+                f"select=day,note&day=gte.{start.isoformat()}&day=lte.{end.isoformat()}")
+            notes = {r["day"]: r["note"] for r in note_rows}
 
             # Don't count days before your data begins as "missing"
-            if metric_rows:
+            if metric_rows and "start" not in params:     # rolling view only; a week shows all 7 rows
                 first_day = date.fromisoformat(min(r["day"] for r in metric_rows))
                 start = max(start, first_day)
 
-            days = build_days(metric_rows, start, today, today)
-            sessions = [s for s in build_sessions(workout_rows) if s["day"] >= start.isoformat()]
+            days = build_days(metric_rows, start, end, today, notes)
+            sessions = [s for s in build_sessions(workout_rows)
+                        if start.isoformat() <= s["day"] <= end.isoformat()]
             attach_training(days, sessions)
 
         except urllib.error.HTTPError as e:
@@ -281,7 +299,7 @@ class handler(BaseHTTPRequestHandler):
 
         self.reply(200, {
             "generated_at": datetime.now(LOCAL_TZ).isoformat(timespec="minutes"),
-            "range": {"start": start.isoformat(), "end": today.isoformat(), "days": n_days},
+            "range": {"start": start.isoformat(), "end": end.isoformat(), "days": n_days},
             "days": days,
             "sessions": sessions,
             "summary": build_summary(days),

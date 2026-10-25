@@ -41,13 +41,25 @@ create table raw_payloads (
 );
 
 -- ============================================================
--- 4. LOCK IT: RLS on, no rules = only the secret key gets in
+-- 4. DAILY NOTES: free-text context, one per day
+--    (body weight arrives from Apple Health as metric 'weight_&_body_mass')
+-- ============================================================
+create table daily_notes (
+  day         date        primary key,
+  note        text        not null,               -- empty note = no row
+  updated_at  timestamptz not null default now()
+);
+
+-- ============================================================
+-- 5. LOCK IT: RLS on, no rules = only the secret key gets in
 -- ============================================================
 alter table daily_metrics enable row level security;
 alter table workouts      enable row level security;
 alter table raw_payloads  enable row level security;
+alter table daily_notes   enable row level security;
 
 -- ============================================================
 -- CHANGE LOG (migrations already applied to the live database)
 -- ============================================================
 -- 2026-10-20: alter table workouts add column hr_coverage_pct numeric;
+-- 2026-10-25: create table daily_notes (...); alter table daily_notes enable row level security;

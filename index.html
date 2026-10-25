@@ -8,61 +8,76 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #6b7280; --line: #e5e7eb;
-    --accent: #2563eb; --accent2: #db2777; --good: #059669; --warn: #d97706; --bad: #dc2626;
-    --deep: #1e3a8a; --core: #3b82f6; --rem: #a78bfa; --awake: #f59e0b; --grey: #9ca3af;
+    --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #6b7280; --faint: #9ca3af; --line: #e5e7eb;
+    --accent: #2563eb; --good: #059669; --warn: #b45309;
+    --deep: #1e3a8a; --core: #3b82f6; --rem: #a78bfa; --steps: #93c5fd;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0f1115; --card: #171a21; --text: #e6e8eb; --muted: #9aa3af; --line: #2a2f3a;
-      --accent: #60a5fa; --accent2: #f472b6; --good: #34d399; --warn: #fbbf24; --bad: #f87171;
-      --deep: #3b5bdb; --core: #60a5fa; --rem: #c4b5fd; --awake: #fbbf24; --grey: #6b7280;
+      --bg: #0f1115; --card: #171a21; --text: #e6e8eb; --muted: #9aa3af; --faint: #6b7280; --line: #2a2f3a;
+      --accent: #60a5fa; --good: #34d399; --warn: #fbbf24;
+      --deep: #3b5bdb; --core: #60a5fa; --rem: #c4b5fd; --steps: #3b5b8a;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
          font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 16px; }
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 15px; margin: 0; }
   .sub { color: var(--muted); font-size: 13px; }
-  .ranges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
            padding: 6px 12px; border-radius: 8px; cursor: pointer; }
   button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  button:disabled { opacity: .4; cursor: default; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi { margin: 0; }
   .kpi .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-  .kpi .value { font-size: 26px; font-weight: 650; margin: 4px 0 2px; }
-  .kpi .value small { font-size: 14px; font-weight: 500; color: var(--muted); }
+  .kpi .value { font-size: 24px; font-weight: 650; margin: 4px 0 2px; }
+  .kpi .value small { font-size: 13px; font-weight: 500; color: var(--muted); }
   .kpi .note { color: var(--muted); font-size: 12px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 16px; margin-bottom: 16px; }
-  .card h2 { font-size: 15px; margin: 0 0 2px; }
-  .card .why { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
-  .chart { position: relative; height: 240px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-  th { color: var(--muted); font-weight: 500; }
-  .tablewrap { overflow-x: auto; }
-  .low { color: var(--muted); }
-  .tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; border: 1px solid var(--line); }
-  .tag.bjj { border-color: var(--accent2); color: var(--accent2); }
-  .tag.str { border-color: var(--accent); color: var(--accent); }
-  .tag.warn { border-color: var(--warn); color: var(--warn); }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; }
+  .charts .card { margin-bottom: 0; }
+  .chart { position: relative; height: 220px; margin-top: 10px; }
+  .why { color: var(--muted); font-size: 12px; margin: 2px 0 0; }
+  .weekbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; font-size: 13px; width: 100%; min-width: 1020px; }
+  th, td { padding: 8px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--card); z-index: 1; }
+  td.txt, th.txt { text-align: left; }
+  td.note { white-space: normal; min-width: 180px; max-width: 280px; color: var(--muted); }
+  tr.today td { color: var(--faint); }
+  tr.avg td { font-weight: 650; border-top: 2px solid var(--line); border-bottom: none; }
+  .partial { color: var(--warn); }
+  .muted { color: var(--faint); }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .noteform { display: grid; grid-template-columns: 160px 1fr auto; gap: 10px; align-items: end; margin-top: 10px; }
+  .noteform input { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid var(--line);
+                    background: var(--bg); color: var(--text); }
+  #noteStatus { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 16px; }
   #login { max-width: 380px; margin: 60px auto; }
   #login input { width: 100%; font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
                  background: var(--bg); color: var(--text); margin: 10px 0; }
-  #login .err { color: var(--bad); font-size: 13px; min-height: 18px; }
-  .banner { background: var(--card); border: 1px dashed var(--warn); color: var(--warn); border-radius: 10px;
-            padding: 8px 12px; font-size: 13px; margin-bottom: 16px; }
-  footer { color: var(--muted); font-size: 12px; margin: 24px 0 8px; }
+  #login .err { color: #dc2626; font-size: 13px; min-height: 18px; }
+  .banner { border: 1px dashed var(--warn); color: var(--warn); border-radius: 10px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; }
+  footer { color: var(--muted); font-size: 12px; margin: 8px 0; }
   .hidden { display: none; }
+  @media (max-width: 640px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .noteform { grid-template-columns: 1fr; }
+    .kpi .value { font-size: 20px; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- LOGIN: shown when there's no key, or the key was wrong (401) -->
+  <!-- LOGIN -->
   <div id="login" class="card hidden">
     <h1>Fitness Tracker</h1>
     <p class="sub">Enter your dashboard key. It's saved in this browser only.</p>
@@ -75,60 +90,56 @@
   <!-- DASHBOARD -->
   <div id="app" class="hidden">
     <header>
-      <div>
-        <h1>Fitness Tracker</h1>
-        <div class="sub" id="updated"></div>
-      </div>
-      <div class="ranges" id="ranges">
-        <button data-days="7">7d</button>
-        <button data-days="14">14d</button>
-        <button data-days="30">30d</button>
-        <button data-days="90">90d</button>
+      <div><h1>Fitness Tracker</h1><div class="sub" id="updated"></div></div>
+      <div class="row" id="ranges">
+        <button data-days="7">7d</button><button data-days="14">14d</button>
+        <button data-days="30">30d</button><button data-days="90">90d</button>
         <button id="lockBtn" title="Forget the key on this browser">Lock</button>
       </div>
     </header>
 
     <div id="demoBanner" class="banner hidden">Demo mode: synthetic data, not a real person's health data.</div>
 
+    <!-- 1. KPI tiles (follow the 7d/14d/30d/90d buttons) -->
     <section class="kpis" id="kpis"></section>
 
-    <section class="grid">
+    <!-- 2. Two charts (same period as the tiles) -->
+    <section class="charts" style="margin-bottom:16px">
       <div class="card">
-        <h2>Recovery</h2>
-        <p class="why">HRV (Ultrahuman, overnight) vs resting HR (Watch). HRV down + resting HR up = under-recovered.</p>
-        <div class="chart"><canvas id="cRecovery"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Sleep</h2>
-        <p class="why">Hours per night by stage (Ultrahuman). Dated by the morning you woke up.</p>
+        <h2>Sleep</h2><p class="why">Hours per night by stage (Ultrahuman), dated by the morning you woke up.</p>
         <div class="chart"><canvas id="cSleep"></canvas></div>
       </div>
       <div class="card">
-        <h2>Energy balance</h2>
-        <p class="why">Intake (MyFitnessPal) vs total burn (basal + active). Grey = possibly incomplete log. No bar = not logged, never 0.</p>
-        <div class="chart"><canvas id="cEnergy"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Macros</h2>
-        <p class="why">Grams per day on fully logged days only.</p>
-        <div class="chart"><canvas id="cMacros"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Activity</h2>
-        <p class="why">Steps and exercise minutes (Watch).</p>
+        <h2>Activity</h2><p class="why">Steps (bars) and exercise minutes (line), Apple Watch.</p>
         <div class="chart"><canvas id="cActivity"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Training load</h2>
-        <p class="why">Minutes per day by type. Cool-downs are merged into the session before them.</p>
-        <div class="chart"><canvas id="cTraining"></canvas></div>
       </div>
     </section>
 
+    <!-- 3. Weekly table (its own week picker) -->
     <section class="card">
-      <h2>Training log</h2>
-      <p class="why">Greyed rows: Polar strap lost contact for most of the session, so HR is less reliable.</p>
-      <div class="tablewrap"><table id="log"></table></div>
+      <div class="weekbar">
+        <div class="row">
+          <button id="prevWeek" aria-label="Previous week">&larr;</button>
+          <h2 id="weekLabel">Week</h2>
+          <button id="nextWeek" aria-label="Next week">&rarr;</button>
+          <button id="thisWeek">This week</button>
+        </div>
+        <span class="sub">kcal · grams · hours · ms · bpm · kg</span>
+      </div>
+      <div class="tablewrap"><table id="week"></table></div>
+      <div class="foot" id="weekFoot"></div>
+    </section>
+
+    <!-- 4. Daily note -->
+    <section class="card">
+      <h2>Daily note</h2>
+      <p class="why">Context your devices can't capture. Save an empty note to remove it.</p>
+      <div class="noteform">
+        <input type="date" id="noteDay" aria-label="Day">
+        <input type="text" id="noteText" maxlength="1000" placeholder="Travel day, slept badly" aria-label="Note">
+        <button class="on" id="noteSave">Save</button>
+      </div>
+      <div id="noteStatus"></div>
     </section>
 
     <footer id="rules"></footer>
@@ -137,38 +148,56 @@
 
 <script>
 // ---------------------------------------------------------------------------
-// 1. SETTINGS AND STATE
+// 1. STATE
 // ---------------------------------------------------------------------------
-const API = "/api/data";
 const DEMO = new URLSearchParams(location.search).has("demo");
-let rangeDays = 30;
-let charts = [];
+let rangeDays = 14, weekStart = mondayOf(localToday()), charts = [], weekData = null;
+try { rangeDays = Number(localStorage.getItem("ft_range")) || 14; } catch (e) {}
 
 function getKey()   { try { return localStorage.getItem("ft_key"); } catch (e) { return null; } }
 function setKey(k)  { try { localStorage.setItem("ft_key", k); } catch (e) {} }
 function clearKey() { try { localStorage.removeItem("ft_key"); } catch (e) {} }
-try { rangeDays = Number(localStorage.getItem("ft_range")) || 30; } catch (e) {}
-
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// Dates as plain "YYYY-MM-DD" strings in your local time
+function localToday() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+function addDays(iso, n) { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function mondayOf(iso) { const dow = new Date(iso + "T12:00:00Z").getUTCDay(); return addDays(iso, -((dow + 6) % 7)); }
+function niceDay(iso, withWeekday = true) {
+  const d = new Date(iso + "T12:00:00Z");
+  return d.toLocaleDateString(undefined, { timeZone: "UTC", weekday: withWeekday ? "short" : undefined, day: "numeric", month: "short" });
+}
 
 // ---------------------------------------------------------------------------
-// 2. LOAD DATA (real API, or synthetic demo data)
+// 2. LOAD
 // ---------------------------------------------------------------------------
-async function load() {
-  if (DEMO) { show("app"); $("demoBanner").classList.remove("hidden"); render(demoData(rangeDays)); return; }
-  const key = getKey();
-  if (!key) { show("login"); return; }
-  try {
-    const res = await fetch(`${API}?days=${rangeDays}`, { headers: { Authorization: `Bearer ${key}` } });
-    if (res.status === 401) { clearKey(); show("login"); $("loginErr").textContent = "That key didn't work."; return; }
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(`${res.status} ${e.error || ""} ${e.detail || ""}`); }
-    show("app");
-    render(await res.json());
-  } catch (err) {
-    show("app");
-    $("kpis").innerHTML = `<div class="card">Couldn't load data: ${err.message}</div>`;
-  }
+async function api(query) {
+  if (DEMO) return demoData(query);
+  const res = await fetch(`/api/data?${query}`, { headers: { Authorization: `Bearer ${getKey()}` } });
+  if (res.status === 401) { clearKey(); show("login"); $("loginErr").textContent = "That key didn't work."; throw new Error("unauthorized"); }
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(`${res.status} ${e.error || ""} ${e.detail || ""}`); }
+  return res.json();
+}
+
+async function loadAll() {
+  if (DEMO) $("demoBanner").classList.remove("hidden");
+  else if (!getKey()) { show("login"); return; }
+  show("app");
+  await Promise.all([loadRange(), loadWeek()]);
+}
+
+async function loadRange() {
+  try { renderRange(await api(`days=${rangeDays}`)); }
+  catch (e) { if (e.message !== "unauthorized") $("kpis").innerHTML = `<div class="card">Couldn't load data: ${e.message}</div>`; }
+}
+
+async function loadWeek() {
+  const end = addDays(weekStart, 6);
+  $("weekLabel").textContent = `Week of ${niceDay(weekStart)}`;
+  $("nextWeek").disabled = weekStart >= mondayOf(localToday());
+  try { weekData = await api(`start=${weekStart}&end=${end}`); renderWeek(weekData); fillNote(); }
+  catch (e) { if (e.message !== "unauthorized") $("week").innerHTML = `<tr><td>Couldn't load week: ${e.message}</td></tr>`; }
 }
 
 function show(which) {
@@ -177,219 +206,192 @@ function show(which) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. DRAW
+// 3. TILES + CHARTS (rolling period)
 // ---------------------------------------------------------------------------
-function render(data) {
-  charts.forEach(c => c.destroy()); charts = [];
-  Chart.defaults.color = css("--muted");
-  Chart.defaults.borderColor = css("--line");
-  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+const fmt = (v, dp = 0) => v == null ? "–" : Number(v).toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
-  document.querySelectorAll("#ranges [data-days]").forEach(b =>
-    b.classList.toggle("on", Number(b.dataset.days) === rangeDays));
-  $("updated").textContent = `${data.range.start} → ${data.range.end} · updated ${data.generated_at.slice(11, 16)}`;
+function renderRange(data) {
+  document.querySelectorAll("#ranges [data-days]").forEach(b => b.classList.toggle("on", Number(b.dataset.days) === rangeDays));
+  $("updated").textContent = `${niceDay(data.range.start, false)} → ${niceDay(data.range.end, false)} · updated ${data.generated_at.slice(11, 16)}`;
 
-  const days = data.days, s = data.summary;
-  const labels = days.map(d => d.day.slice(5));          // "10-15"
-  const col = k => days.map(d => d[k]);
-
-  drawKpis(data);
-
-  // Recovery
-  charts.push(new Chart($("cRecovery"), {
-    type: "line",
-    data: { labels, datasets: [
-      { label: "HRV (ms)", data: col("hrv"), borderColor: css("--accent"), backgroundColor: css("--accent"),
-        yAxisID: "y", tension: .3, pointRadius: days.map(d => d.training.includes("BJJ") ? 5 : 3),
-        pointStyle: days.map(d => d.training.includes("BJJ") ? "triangle" : "circle") },
-      { label: "Resting HR (bpm)", data: col("rhr"), borderColor: css("--accent2"), backgroundColor: css("--accent2"),
-        yAxisID: "y1", tension: .3, pointRadius: 3 },
-    ]},
-    options: base({
-      y:  { position: "left",  title: { display: true, text: "HRV ms" } },
-      y1: { position: "right", title: { display: true, text: "RHR bpm" }, grid: { drawOnChartArea: false } },
-    }, (i) => days[i].training.length ? "Trained: " + days[i].training.join(", ") : "Rest day"),
-  }));
-
-  // Sleep
-  charts.push(new Chart($("cSleep"), {
-    type: "bar",
-    data: { labels, datasets: [
-      { label: "Deep", data: col("sleep_deep"), backgroundColor: css("--deep") },
-      { label: "Core", data: col("sleep_core"), backgroundColor: css("--core") },
-      { label: "REM",  data: col("sleep_rem"),  backgroundColor: css("--rem") },
-    ]},
-    options: base({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: "hours" } } },
-      (i) => days[i].sleep_total != null ? `Total ${days[i].sleep_total.toFixed(1)} h` : "No sleep data"),
-  }));
-
-  // Energy
-  const barColour = days.map(d => d.intake_status === "complete" ? css("--accent")
-                               : d.intake_status === "today" ? css("--line") : css("--grey"));
-  charts.push(new Chart($("cEnergy"), {
-    data: { labels, datasets: [
-      { type: "bar", label: "Intake kcal", data: col("intake"), backgroundColor: barColour, order: 2 },
-      { type: "line", label: "Total burn kcal", data: col("total_burn"), borderColor: css("--accent2"),
-        backgroundColor: css("--accent2"), tension: .3, pointRadius: 3, order: 1 },
-    ]},
-    options: base({ y: { title: { display: true, text: "kcal" } } }, (i) => {
-      const d = days[i];
-      if (d.intake_status === "not_logged") return "Not logged";
-      if (d.intake_status === "partial") return "Possibly incomplete log: excluded from averages";
-      if (d.intake_status === "today") return "Today so far";
-      return d.net_energy != null ? `Net ${d.net_energy > 0 ? "+" : ""}${d.net_energy} kcal` : "";
-    }),
-  }));
-
-  // Macros (complete days only)
-  const onlyComplete = k => days.map(d => d.intake_status === "complete" ? d[k] : null);
-  charts.push(new Chart($("cMacros"), {
-    data: { labels, datasets: [
-      { type: "bar", label: "Protein g", data: onlyComplete("protein"), backgroundColor: css("--accent") },
-      { type: "bar", label: "Carbs g",   data: onlyComplete("carbs"),   backgroundColor: css("--rem") },
-      { type: "bar", label: "Fat g",     data: onlyComplete("fat"),     backgroundColor: css("--awake") },
-      { type: "line", label: "Fibre g",  data: onlyComplete("fibre"),   borderColor: css("--good"),
-        backgroundColor: css("--good"), yAxisID: "y1", tension: .3, pointRadius: 3 },
-    ]},
-    options: base({ y: { title: { display: true, text: "g" } },
-                    y1: { position: "right", title: { display: true, text: "fibre g" }, grid: { drawOnChartArea: false } } }),
-  }));
-
-  // Activity
-  charts.push(new Chart($("cActivity"), {
-    data: { labels, datasets: [
-      { type: "bar", label: "Steps", data: col("steps"), backgroundColor: css("--core") },
-      { type: "line", label: "Exercise min", data: col("exercise_min"), borderColor: css("--good"),
-        backgroundColor: css("--good"), yAxisID: "y1", tension: .3, pointRadius: 3 },
-    ]},
-    options: base({ y: { title: { display: true, text: "steps" } },
-                    y1: { position: "right", title: { display: true, text: "min" }, grid: { drawOnChartArea: false } } }),
-  }));
-
-  // Training load (minutes per category per day)
-  const cats = [...new Set(data.sessions.map(x => x.category))];
-  const palette = { BJJ: css("--accent2"), Strength: css("--accent"), Run: css("--good") };
-  charts.push(new Chart($("cTraining"), {
-    type: "bar",
-    data: { labels, datasets: cats.map(c => ({
-      label: c, backgroundColor: palette[c] || css("--grey"),
-      data: days.map(d => {
-        const m = data.sessions.filter(x => x.day === d.day && x.category === c).reduce((a, x) => a + x.duration_min, 0);
-        return m || null;
-      }),
-    }))},
-    options: base({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: "minutes" } } }),
-  }));
-
-  drawLog(data.sessions);
-  const r = data.rules;
-  $("rules").textContent = `Rules: intake below ${Math.round(r.partial_intake_ratio * 100)}% of your typical day is flagged as possibly incomplete; ` +
-    `Polar sessions under ${r.low_hr_coverage}% HR coverage are greyed; cool-downs within ${r.cooldown_merge_min} min are merged into the previous session; ` +
-    `today is left out of averages for metrics that build up during the day.`;
-}
-
-function base(scales, footer) {
-  return {
-    responsive: true, maintainAspectRatio: false, spanGaps: false,     // gaps stay gaps: missing is not zero
-    interaction: { mode: "index", intersect: false },
-    plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } },
-               tooltip: footer ? { callbacks: { footer: items => footer(items[0].dataIndex) } } : {} },
-    scales: { x: { grid: { display: false }, ...(scales.x || {}) }, ...scales },
-  };
-}
-
-// ---------------------------------------------------------------------------
-// 4. KPI CARDS AND TRAINING TABLE
-// ---------------------------------------------------------------------------
-function drawKpis(data) {
   const s = data.summary, days = data.days, sessions = data.sessions;
   const last = k => { for (let i = days.length - 1; i >= 0; i--) if (days[i][k] != null) return days[i][k]; return null; };
-  const fmt = (v, dp = 0) => v == null ? "–" : Number(v).toLocaleString(undefined, { maximumFractionDigits: dp });
-  const bjj = sessions.filter(x => x.category === "BJJ").length;
-  const hours = sessions.reduce((a, x) => a + x.duration_min, 0) / 60;
-  const net = s.net_energy.avg;
-
+  const net = s.net_energy.avg, w = last("weight");
   const cards = [
-    ["HRV", `${fmt(s.hrv.avg)} <small>ms avg</small>`, `Latest ${fmt(last("hrv"))} ms · ${s.hrv.days}/${s.hrv.of} nights`],
-    ["Resting HR", `${fmt(s.rhr.avg)} <small>bpm avg</small>`, `Latest ${fmt(last("rhr"))} bpm`],
-    ["Sleep", `${fmt(s.sleep_total.avg, 1)} <small>h avg</small>`, `Deep ${fmt(s.sleep_deep.avg, 1)} h · REM ${fmt(s.sleep_rem.avg, 1)} h`],
-    ["Protein", `${fmt(s.protein.avg)} <small>g avg</small>`, `${s.protein.days} of ${s.protein.of} days fully logged`],
-    ["Net energy", `${net == null ? "–" : (net > 0 ? "+" : "") + fmt(net)} <small>kcal/day</small>`, `Over ${s.net_energy.days} complete days`],
-    ["Training", `${sessions.length} <small>sessions</small>`, `${fmt(hours, 1)} h total · ${bjj} BJJ`],
+    ["HRV", `${fmt(s.hrv.avg)} <small>ms</small>`, `Latest ${fmt(last("hrv"))} · ${s.hrv.days}/${s.hrv.of} nights`],
+    ["Resting HR", `${fmt(s.rhr.avg)} <small>bpm</small>`, `Latest ${fmt(last("rhr"))} bpm`],
+    ["Sleep", `${fmt(s.sleep_total.avg, 1)} <small>h</small>`, `Deep ${fmt(s.sleep_deep.avg, 1)} · REM ${fmt(s.sleep_rem.avg, 1)}`],
+    ["Protein", `${fmt(s.protein.avg)} <small>g</small>`, `${s.protein.days}/${s.protein.of} days logged` + (w && s.protein.avg ? ` · ${(s.protein.avg / w).toFixed(1)} g/kg` : "")],
+    ["Net energy", `${net == null ? "–" : (net > 0 ? "+" : "") + fmt(net)} <small>kcal/d</small>`, `Over ${s.net_energy.days} complete days`],
+    ["Training", `${sessions.length} <small>sessions</small>`, `${fmt(sessions.reduce((a, x) => a + x.duration_min, 0) / 60, 1)} h · ${sessions.filter(x => x.category === "BJJ").length} BJJ`],
+    ["Weight", `${fmt(w, 1)} <small>kg</small>`, s.weight && s.weight.days ? `Avg ${fmt(s.weight.avg, 1)} · ${s.weight.days} weigh-ins` : "Step on the scale"],
   ];
   $("kpis").innerHTML = cards.map(([l, v, n]) =>
     `<div class="card kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="note">${n}</div></div>`).join("");
+
+  charts.forEach(c => c.destroy()); charts = [];
+  Chart.defaults.color = css("--muted"); Chart.defaults.borderColor = css("--line");
+  const labels = days.map(d => niceDay(d.day, false)), col = k => days.map(d => d[k]);
+  const opts = (extra = {}) => ({ responsive: true, maintainAspectRatio: false, spanGaps: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } } },
+    scales: { x: { grid: { display: false }, ...(extra.x || {}) }, ...extra } });
+
+  charts.push(new Chart($("cSleep"), { type: "bar",
+    data: { labels, datasets: [
+      { label: "Deep", data: col("sleep_deep"), backgroundColor: css("--deep") },
+      { label: "Core", data: col("sleep_core"), backgroundColor: css("--core") },
+      { label: "REM", data: col("sleep_rem"), backgroundColor: css("--rem") } ] },
+    options: opts({ x: { stacked: true }, y: { stacked: true, title: { display: true, text: "hours" } } }) }));
+
+  charts.push(new Chart($("cActivity"), {
+    data: { labels, datasets: [
+      { type: "bar", label: "Steps", data: col("steps"), backgroundColor: css("--steps"), order: 2 },
+      { type: "line", label: "Exercise min", data: col("exercise_min"), borderColor: css("--good"), backgroundColor: css("--good"),
+        yAxisID: "y1", tension: .3, pointRadius: 3, order: 1 } ] },
+    options: opts({ y: { title: { display: true, text: "steps" } },
+                    y1: { position: "right", title: { display: true, text: "min" }, grid: { drawOnChartArea: false } } }) }));
+
+  const r = data.rules;
+  $("rules").textContent = `Rules: averages leave out today for things that build up during the day; food averages use fully logged days only ` +
+    `(intake below ${Math.round(r.partial_intake_ratio * 100)}% of your typical day counts as incomplete); cool-downs are merged into the session before them.`;
 }
 
-function drawLog(sessions) {
-  const rows = [...sessions].reverse().map(x => {
-    const tag = x.category === "BJJ" ? "bjj" : x.category === "Strength" ? "str" : "";
-    const cd = x.cooldown_min ? ` <span class="sub">(incl. ${Math.round(x.cooldown_min)} cool-down)</span>` : "";
-    const cov = x.hr_coverage_pct == null ? "" : x.low_signal
-      ? `<span class="tag warn">${Math.round(x.hr_coverage_pct)}% signal</span>` : `${Math.round(x.hr_coverage_pct)}%`;
-    return `<tr class="${x.low_signal ? "low" : ""}">
-      <td>${x.day.slice(5)} ${x.time}</td><td><span class="tag ${tag}">${x.category}</span></td>
-      <td>${Math.round(x.duration_min)} min${cd}</td><td>${x.active_kcal ?? "–"} kcal</td>
-      <td>${x.avg_hr ?? "–"} / ${x.max_hr ?? "–"}</td><td>${cov}</td><td class="sub">${x.source ?? ""}</td></tr>`;
+// ---------------------------------------------------------------------------
+// 4. WEEKLY TABLE
+// ---------------------------------------------------------------------------
+const COLS = [
+  ["steps", "Steps", 0, true], ["total_burn", "Burn", 0, true], ["intake", "Intake", 0, true],
+  ["protein", "Protein", 0, true], ["carbs", "Carbs", 0, true], ["fat", "Fat", 0, true],
+  ["sleep_total", "Sleep", 1, false], ["hrv", "HRV", 0, false], ["rhr", "RHR", 0, false],
+];
+const FOOD = new Set(["intake", "protein", "carbs", "fat"]);
+
+function esc(t) { return String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+function renderWeek(data) {
+  const byDay = {}; data.sessions.forEach(x => (byDay[x.day] = byDay[x.day] || []).push(x.category));
+  const head = `<tr><th>Day</th>${COLS.map(c => `<th>${c[1]}</th>`).join("")}<th class="txt">Session</th><th>Weight</th><th class="txt">Note</th></tr>`;
+
+  const rows = data.days.map(d => {
+    const cells = COLS.map(([k, , dp, buildsUp]) => {
+      let v = d[k], cls = "";
+      if (v == null) return `<td class="muted">–</td>`;
+      let txt = fmt(v, dp);
+      if (FOOD.has(k) && d.intake_status === "partial") { cls = "partial"; if (k === "intake") txt += "*"; }
+      if (d.is_today && buildsUp) txt += "…";
+      return `<td class="${cls}">${txt}</td>`;
+    }).join("");
+    const sess = (byDay[d.day] || []).join(" + ") || `<span class="muted">Rest</span>`;
+    return `<tr class="${d.is_today ? "today" : ""}"><td>${niceDay(d.day)}</td>${cells}
+      <td class="txt">${sess}</td><td>${fmt(d.weight, 1)}</td><td class="note">${d.note ? esc(d.note) : ""}</td></tr>`;
   }).join("");
-  $("log").innerHTML = `<tr><th>When</th><th>Type</th><th>Duration</th><th>Active</th><th>Avg / max HR</th><th>HR signal</th><th>Source</th></tr>${rows}`;
+
+  // Average row, straight from the server's honest summary
+  const s = data.summary;
+  const avg = COLS.map(([k, , dp]) => `<td>${s[k] && s[k].avg != null ? fmt(s[k].avg, dp) : "–"}</td>`).join("");
+  const nSess = data.sessions.length;
+  const avgRow = `<tr class="avg"><td>Average</td>${avg}<td class="txt">${nSess} session${nSess === 1 ? "" : "s"}</td>
+    <td>${s.weight && s.weight.avg != null ? fmt(s.weight.avg, 1) : "–"}</td><td></td></tr>`;
+
+  $("week").innerHTML = head + rows + avgRow;
+  const n = (x, word) => `${x} ${word}${x === 1 ? "" : "s"}`;
+  $("weekFoot").innerHTML =
+    `Averages use ${n(s.steps.days, "day")} for steps and burn, ${n(s.intake.days, "fully logged day")} for food, ${n(s.sleep_total.days, "night")} for sleep. ` +
+    `<span class="partial">*</span> possibly incomplete log (kept out of food averages) · … today so far (kept out of averages) · – no data.`;
 }
 
 // ---------------------------------------------------------------------------
-// 5. DEMO DATA (synthetic, same shape as /api/data) - safe to show anyone
+// 5. DAILY NOTE
 // ---------------------------------------------------------------------------
-function demoData(n) {
-  let seed = 42; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const between = (a, b) => Math.round((a + rnd() * (b - a)) * 10) / 10;
-  const today = new Date(); const days = [], sessions = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    const day = d.toISOString().slice(0, 10), dow = d.getDay(), isToday = i === 0;
-    const bjj = [1, 3, 6].includes(dow), str = [0, 2, 4, 5].includes(dow);
-    const basal = between(1950, 2050), active = between(500, 900) + (bjj ? 700 : 0);
+function fillNote() {
+  if (!$("noteDay").value) $("noteDay").value = localToday();
+  $("noteDay").max = localToday();
+  const row = weekData && weekData.days.find(d => d.day === $("noteDay").value);
+  if (row) $("noteText").value = row.note || "";
+  if (DEMO) $("noteStatus").textContent = "Saving is off in demo mode.";
+}
+
+async function saveNote() {
+  if (DEMO) return;
+  const day = $("noteDay").value;
+  if (!day) { $("noteStatus").textContent = "Pick a day first."; return; }
+  $("noteStatus").textContent = "Saving…";
+  try {
+    const res = await fetch("/api/log", { method: "POST",
+      headers: { Authorization: `Bearer ${getKey()}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ day, note: $("noteText").value }) });
+    const out = await res.json().catch(() => ({}));
+    if (res.status === 401) { clearKey(); show("login"); return; }
+    if (!res.ok) { $("noteStatus").textContent = `Not saved: ${out.error || res.status}`; return; }
+    $("noteStatus").textContent = out.note ? `Saved for ${niceDay(day)}.` : `Removed for ${niceDay(day)}.`;
+    weekStart = mondayOf(day);
+    loadWeek();
+  } catch (e) { $("noteStatus").textContent = `Not saved: ${e.message}`; }
+}
+
+// ---------------------------------------------------------------------------
+// 6. DEMO DATA (synthetic, same shape as /api/data, stable per date)
+// ---------------------------------------------------------------------------
+function demoData(query) {
+  const q = new URLSearchParams(query), today = localToday();
+  let start, end;
+  if (q.has("start")) { start = q.get("start"); end = q.get("end") < today ? q.get("end") : today; }
+  else { end = today; start = addDays(today, -(Number(q.get("days")) - 1)); }
+  const days = [], sessions = [];
+  for (let day = start; day <= end; day = addDays(day, 1)) {
+    let seed = [...day].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 2147483647, 7);
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const between = (a, b) => Math.round((a + rnd() * (b - a)) * 10) / 10;
+    const dow = new Date(day + "T12:00:00Z").getUTCDay(), isToday = day === today;
+    const bjj = [2, 5].includes(dow), str = [1, 3, 4, 6].includes(dow);
     const r = rnd(), status = isToday ? "today" : r < .1 ? "not_logged" : r < .18 ? "partial" : "complete";
-    const intake = status === "not_logged" ? null : status === "partial" ? between(900, 1400) : between(2300, 2900);
     const deep = between(1, 1.7), core = between(3.5, 4.8), rem = between(1, 2);
-    const row = { day, is_today: isToday, hrv: between(68, 92) - (bjj ? 6 : 0), rhr: between(55, 62),
-      steps: Math.round(between(6000, 12000)), exercise_min: Math.round(between(30, 120)), basal, active,
-      total_burn: Math.round(basal + active), intake, intake_status: status,
-      protein: status === "complete" ? between(170, 215) : null, carbs: status === "complete" ? between(220, 320) : null,
-      fat: status === "complete" ? between(60, 95) : null, fibre: status === "complete" ? between(20, 38) : null,
+    const basal = between(1820, 1900), active = between(500, 900) + (bjj ? 600 : 0);
+    const food = status === "complete" || status === "today", f = status === "today" ? .5 : 1;
+    const row = { day, is_today: isToday, hrv: Math.round(between(68, 92) - (bjj ? 6 : 0)), rhr: Math.round(between(55, 62)),
+      steps: Math.round(between(6000, 12000) * (isToday ? .5 : 1)), exercise_min: Math.round(between(30, 110)),
       sleep_deep: deep, sleep_core: core, sleep_rem: rem, sleep_total: Math.round((deep + core + rem) * 10) / 10,
-      training: [], training_min: 0 };
-    row.net_energy = status === "complete" ? Math.round(intake - row.total_burn) : null;
-    if (str) { const m = between(50, 80); sessions.push({ day, time: "09:30", category: "Strength", name: "Functional Strength Training",
-      source: "Apple Watch", duration_min: m, cooldown_min: 12, active_kcal: Math.round(m * 6.5), avg_hr: between(118, 132),
-      max_hr: Math.round(between(150, 165)), hr_coverage_pct: 100, low_signal: false }); row.training.push("Strength"); }
-    if (bjj) { const cov = Math.round(between(30, 95)); const m = between(70, 125); sessions.push({ day, time: "19:30", category: "BJJ",
-      name: "Martial Arts", source: "Polar Beat", duration_min: m, cooldown_min: 0, active_kcal: Math.round(m * 9.4),
-      avg_hr: between(108, 128), max_hr: Math.round(between(172, 186)), hr_coverage_pct: cov, low_signal: cov < 50 }); row.training.push("BJJ"); }
+      total_burn: Math.round((basal + active) * (isToday ? .6 : 1)), intake_status: status,
+      intake: status === "not_logged" ? null : status === "partial" ? Math.round(between(900, 1300)) : Math.round(between(2250, 2800) * f),
+      protein: food ? Math.round(between(175, 215) * f) : status === "partial" ? 90 : null,
+      carbs: food ? Math.round(between(220, 310) * f) : status === "partial" ? 110 : null,
+      fat: food ? Math.round(between(60, 92) * f) : status === "partial" ? 40 : null,
+      weight: rnd() < .75 ? Math.round((83 - (Date.parse(day) - Date.parse("2026-10-01")) / 864e5 * .03 + between(-.3, .3)) * 10) / 10 : null,
+      note: rnd() < .12 ? "Demo note: travel day" : null };
     days.push(row);
+    if (str) sessions.push({ day, time: "09:30", category: "Strength", duration_min: between(50, 80), low_signal: false });
+    if (bjj) sessions.push({ day, time: "19:30", category: "BJJ", duration_min: between(70, 120), low_signal: false });
   }
-  const summary = {}, cum = ["steps", "exercise_min", "intake", "protein", "carbs", "fat", "fibre", "total_burn", "net_energy"];
-  ["hrv", "rhr", "steps", "exercise_min", "intake", "protein", "carbs", "fat", "fibre", "total_burn", "net_energy",
-   "sleep_total", "sleep_deep", "sleep_rem"].forEach(k => {
-    const usable = days.filter(d => !(cum.includes(k) && d.is_today))
-      .map(d => (["intake", "protein", "carbs", "fat", "fibre"].includes(k) && d.intake_status !== "complete") ? null : d[k]);
+  const cum = new Set(["steps", "total_burn", "intake", "protein", "carbs", "fat", "net_energy"]), summary = {};
+  ["hrv", "rhr", "sleep_total", "sleep_deep", "sleep_rem", "steps", "total_burn", "intake", "protein", "carbs", "fat", "weight", "net_energy"].forEach(k => {
+    const usable = days.filter(d => !(cum.has(k) && d.is_today)).map(d => {
+      if (FOOD.has(k) && d.intake_status !== "complete") return null;
+      if (k === "net_energy") return d.intake_status === "complete" ? d.intake - d.total_burn : null;
+      return d[k];
+    });
     const known = usable.filter(v => v != null);
     summary[k] = { avg: known.length ? known.reduce((a, b) => a + b, 0) / known.length : null, days: known.length, of: usable.length };
   });
-  return { generated_at: new Date().toISOString(), range: { start: days[0].day, end: days[days.length - 1].day, days: n },
-           days, sessions, summary, rules: { partial_intake_ratio: .6, low_hr_coverage: 50, cooldown_merge_min: 60 } };
+  return { generated_at: new Date().toISOString(), range: { start, end, days: days.length }, days, sessions, summary,
+           rules: { partial_intake_ratio: .6, low_hr_coverage: 50, cooldown_merge_min: 60 } };
 }
 
 // ---------------------------------------------------------------------------
-// 6. WIRING
+// 7. WIRING
 // ---------------------------------------------------------------------------
 document.querySelectorAll("#ranges [data-days]").forEach(b => b.onclick = () => {
-  rangeDays = Number(b.dataset.days);
-  try { localStorage.setItem("ft_range", rangeDays); } catch (e) {}
-  load();
+  rangeDays = Number(b.dataset.days); try { localStorage.setItem("ft_range", rangeDays); } catch (e) {} loadRange();
 });
+$("prevWeek").onclick = () => { weekStart = addDays(weekStart, -7); loadWeek(); };
+$("nextWeek").onclick = () => { weekStart = addDays(weekStart, 7); loadWeek(); };
+$("thisWeek").onclick = () => { weekStart = mondayOf(localToday()); loadWeek(); };
+$("noteDay").onchange = fillNote;
+$("noteSave").onclick = saveNote;
 $("lockBtn").onclick = () => { clearKey(); location.href = location.pathname; };
-$("loginBtn").onclick = () => { const k = $("keyInput").value.trim(); if (k) { setKey(k); $("loginErr").textContent = ""; load(); } };
+$("loginBtn").onclick = () => { const k = $("keyInput").value.trim(); if (k) { setKey(k); $("loginErr").textContent = ""; loadAll(); } };
 $("keyInput").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
-load();
+loadAll();
 </script>
 </body>
 </html>

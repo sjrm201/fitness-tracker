@@ -18,7 +18,7 @@ Wearable apps each show their own slice of the picture. Putting them side by sid
 | A day with nothing logged gets treated as 0, dragging averages down | Missing data is stored as **no row**, never 0. Averages only use days that exist, and the dashboard shows "X of Y days logged" |
 | A forgotten meal makes a day look like a huge calorie deficit | Intake below 60% of your typical day is flagged as possibly incomplete and excluded from averages and net energy |
 | A chest strap losing contact records 0 bpm, pulling a 115 bpm session down to 50 | Polar sessions are recalculated from minute-level data, skipping dropout minutes, and get an `hr_coverage_pct` score. Low-coverage sessions are greyed out |
-| Some energy metrics arrive in kJ, others in kcal | Everything is normalised to kcal on the way in |
+| Some energy metrics arrive in kJ, others in kcal (and weight may arrive in lb) | Everything is normalised to kcal and kg on the way in |
 | The same data gets sent many times (hourly runs, retries, backfills) | Every write is an upsert on a primary key, so resending is harmless |
 
 ---
@@ -58,7 +58,8 @@ flowchart LR
 ```
 api/
   ingest.py     receives data from the phone (POST)
-  data.py       serves the dashboard (GET)
+  data.py       serves the dashboard (GET, ?days=N or ?start=&end=)
+  log.py        saves a daily note from the dashboard (POST)
 supabase/
   schema.sql    tables, keys, row level security, change log
 tests/
@@ -144,6 +145,7 @@ Go to `https://<your-app>.vercel.app`, enter your `DASHBOARD_KEY`, done. On iPho
 | What | Where |
 |---|---|
 | Which metrics are stored | `WISHLIST` in `api/ingest.py`. Unlisted metrics are reported back as `ignored_metrics` |
+| Weekly table columns | `COLS` in `index.html` |
 | Strap dropout threshold | `HR_DROPOUT_FLOOR` in `api/ingest.py` |
 | Partial-intake threshold, low-HR-signal threshold, cool-down merge window | Top of `api/data.py` |
 | Your timezone | `TZ_OFFSET_HOURS` environment variable |
@@ -159,7 +161,8 @@ Go to `https://<your-app>.vercel.app`, enter your `DASHBOARD_KEY`, done. On iPho
 
 ## Roadmap
 
-- [ ] Manual log: body weight and daily notes
+- [x] Body weight (smart scale via Apple Health) and daily notes
+- [x] Weekly table view with honest weekly averages
 - [ ] MCP server so an AI assistant can query the database directly
 - [ ] Dashboard design pass
 
