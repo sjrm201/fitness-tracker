@@ -53,7 +53,8 @@ FIELDS = {
     "sleep_rem": "sleep_rem",
     "sleep_core": "sleep_core",
     "sleep_awake": "sleep_awake",
-    "weight_&_body_mass": "weight",   # Eufy scale via Apple Health
+    "weight_body_mass": "weight",     # Eufy scale via Apple Health (name as actually sent)
+    "weight_&_body_mass": "weight",   # documented name, kept as an alias
 }
 
 # Metrics that build up during the day: today's value is incomplete,

@@ -29,7 +29,8 @@ WISHLIST = {
     "apple_exercise_time", "physical_effort",
     "dietary_energy", "protein", "carbohydrates", "total_fat", "fiber",
     "sleep_analysis",
-    "weight_&_body_mass",          # from the Eufy scale via Apple Health
+    "weight_body_mass",            # from the Eufy scale via Apple Health (name as actually sent)
+    "weight_&_body_mass",          # the name in Auto Export's docs, kept in case it changes
 }
 
 # Polar strap dropouts: when the strap loses skin contact it records 0 bpm

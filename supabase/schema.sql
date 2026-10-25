@@ -42,7 +42,7 @@ create table raw_payloads (
 
 -- ============================================================
 -- 4. DAILY NOTES: free-text context, one per day
---    (body weight arrives from Apple Health as metric 'weight_&_body_mass')
+--    (body weight arrives from Apple Health as metric 'weight_body_mass')
 -- ============================================================
 create table daily_notes (
   day         date        primary key,
